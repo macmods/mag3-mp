@@ -152,7 +152,7 @@ function envt = envt_sb_v5(farm,time,dir_ROMS,dir_WAVE)
     % try to be more specific.  The LES is not informative about this
     % number as it lacks the submesoscale and mesoscale influences.:
 
-    envt.Dh = 0.02 .* 60 .* 60;
+    envt.Dh = 0.1 .* 60 .* 60;
     
     
 %% PAR

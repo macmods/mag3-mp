@@ -31,8 +31,8 @@ function [Nutrient_out] = ADI_3D_v4(Nutrient_in,Tr)
                     NtxR = Nt(3:end,2:end-1,2:end-1);
                     NtyL = Nt(2:end-1,1:end-2,2:end-1);
                     NtyR = Nt(2:end-1,3:end,2:end-1);
-                    NtzU = Nt(2:end-1,2:end-1,1:end-2); % Up is equivalent to z-1
-                    NtzD = Nt(2:end-1,2:end-1,3:end); % Down is equivalent to z+1 
+                    NtzD = Nt(2:end-1,2:end-1,1:end-2); % Up is equivalent to z-1
+                    NtzU = Nt(2:end-1,2:end-1,3:end); % Down is equivalent to z+1 
             
                     % For surface layer
                     Ntin_s = Nt(2:end-1,2:end-1,1);
@@ -40,8 +40,8 @@ function [Nutrient_out] = ADI_3D_v4(Nutrient_in,Tr)
                     NtxR_s = Nt(3:end,2:end-1,1);
                     NtyL_s = Nt(2:end-1,1:end-2,1);
                     NtyR_s = Nt(2:end-1,3:end,1);
-                    NtzU_s = Nt(2:end-1,2:end-1,2); % Neumann Boundary Condition
-                    NtzD_s = Nt(2:end-1,2:end-1,2);  
+                    NtzD_s = Nt(2:end-1,2:end-1,2); % Neumann Boundary Condition
+                    NtzU_s = Nt(2:end-1,2:end-1,2);  
                     
                     
 %% Explicit Advection

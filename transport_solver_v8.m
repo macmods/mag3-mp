@@ -1,4 +1,4 @@
-function [NO3_field, NH4_field, DON_field, duration_dt] = transport_solver_v7(NO3_field,NH4_field,DON_field,Sink,Tr,kelp_ar,farm,time,duration)
+function [NO3_field, NH4_field, DON_field, duration_dt] = transport_solver_v8(NO3_field,NH4_field,DON_field,Sink,Tr,kelp_ar,farm,time,duration)
 % transport_solver calculates changes to nutrient field from sources/sinks
 % and then runs it through the ADI_solver
 %
@@ -70,17 +70,17 @@ while (duration < 24 && delta < 0.2) ... % keep going if delta is less than 20%
             % STEP 1: APPLY SINK AND SOURCE TERMS
             % NO3 = NO3 [umol N/m3] - Uptake [umol N/m3/h] + Remin[DON]
 
-            NO3_field = NO3_field ...
-                      - up_NO3_tr .* time.dt_Tr ...
-                      + DON_field .* 1e3 .* param.remin .* time.dt_Tr;
+            NO3_field = NO3_field; ...
+                      %- up_NO3_tr .* time.dt_Tr ...
+                      %+ DON_field .* 1e3 .* param.remin .* time.dt_Tr;
                       % SINK: uptake * biomass
                       % SOURCE: DON in mmol converted to umol * remin rate
 
             % STEP 1: APPLY SINK AND SOURCE TERMS
             % NH4 = NH4 [umol N/m3] - Uptake [umol N/m3/h]
 
-            NH4_field = NH4_field ...
-                      - up_NH4_tr .* time.dt_Tr;
+            NH4_field = NH4_field; ...
+                      %- up_NH4_tr .* time.dt_Tr;
                       % SINK: uptake * biomass
                       % SOURCE: none
 
@@ -89,18 +89,18 @@ while (duration < 24 && delta < 0.2) ... % keep going if delta is less than 20%
             % N/m3/h] - Remin[DON] + (Exudation+Mortality)[Ns][mmol
             % N/m3/h]
    
-            DON_field = DON_field ...
-                      - up_DON_tr ./ 1e3 .* time.dt_Tr ...
-                      - DON_field .* param.remin .* time.dt_Tr ...
-                      + rDON_tr .* time.dt_Tr;
+            DON_field = DON_field; ...
+                      %- up_DON_tr ./ 1e3 .* time.dt_Tr ...
+                      %- DON_field .* param.remin .* time.dt_Tr ...
+                      %+ rDON_tr .* time.dt_Tr;
                   % SINK: uptake * biomass and remin to NO3
                   % SOURCE: Exudation and mortality froms Ns
 
             % STEP 2: TRANSPORT
 
-            NO3_field = ADI_3D_v4(NO3_field,Tr.NO3);
-            NH4_field = ADI_3D_v4(NH4_field,Tr.NH4);
-            DON_field = ADI_3D_v4(DON_field,Tr.DON);
+            NO3_field = ADI_3D_v5(NO3_field,Tr.NO3);
+            NH4_field = ADI_3D_v5(NH4_field,Tr.NH4);
+            DON_field = ADI_3D_v5(DON_field,Tr.DON);
             
             % if delta nutrient is more than 10% recalc uptake
             delta = max(...

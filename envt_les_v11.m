@@ -1,17 +1,17 @@
-function envt = envt_les_v9(envt,farm,dir_LES)
+function envt = envt_les_v11(envt,farm,dir_LES)
 % Load velocity deficits from LES files
 % INPUT: envt, farm, and les directory where fields are saved
 % OUTPUT: 3-d velocity deficit fields + diffusivity for three kelp scenarios
-%   u_def_a; u_def_b; u_def_c
-%   v_def_a; v_def_b; v_def_c
-%   w_def_a; w_def_b; w_def_c
+%   u_def_a; u_def_b; u_def_c and d
+%   v_def_a; v_def_b; v_def_c and d
+%   w_def_a; w_def_b; w_def_c and d
 %       a = "subsurface" and deep mixed layer
 %       b = "subsurface" and shallow mixed layer
 %       c = "max canopy" and deep mixed layer
 %       d = "max canopy" and shallow mixed layer
 %       These are normalized velocity deficits and will be scaled with flow
 %       from ROMS conditions
-%   K_a; K_b;
+%   K_a; K_b; c-d
 %       normalized vertical diffusivity
 %       K = K_a * u-star * cultivation depth
 %       u-star = 0.0061 cm/s in LES case and will be scaled with mean flow
@@ -20,14 +20,47 @@ function envt = envt_les_v9(envt,farm,dir_LES)
 %% File Directory
     lesfiles = dir(fullfile(dir_LES,'*.csv'));
     
-    % There are four files
+    % first two files are for farmless case
+    % farmless, deep mixed layer
+    % farmless, shallow mixed layer
+    for ff = 1:2
+        
+        filename = strcat(lesfiles(ff).folder,'/',lesfiles(ff).name);
+        les = readtable(filename);
+        lesgrid.z = max(abs(unique(les.z))); lesgrid.dz = 0.5;
+    
+        % "bdef" means it is velocity deficit for the "average" backbone
+        u_bdef = interp1(abs(les.z),les.u,1:farm.dz:farm.z,'spline');
+        v_bdef = interp1(abs(les.z),les.v,1:farm.dz:farm.z,'spline');
+        w_bdef = interp1(abs(les.z),les.w,1:farm.dz:farm.z,'spline');
+        K_b    = interp1(abs(les.z),les.Kdiff,1:farm.dz:farm.z,'spline');
+            % just in case interp extrapolates a negative value -> if it
+            % does will cause BIG problems in transport function
+            K_b(K_b < 0) = min(min(min(K_b)));
+        
+        if ff == 1
+            envt.u_def_0d = permute(repmat(u_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.v_def_0d = permute(repmat(v_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.w_def_0d = permute(repmat(w_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.K_0d = permute(repmat(K_b',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+        elseif ff == 2
+            envt.u_def_0s = permute(repmat(u_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.v_def_0s = permute(repmat(v_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.w_def_0s = permute(repmat(w_bdef',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+            envt.K_0s = permute(repmat(K_b',1,size(farm.gridx_tr,1),size(farm.gridx_tr,2)),[2 3 1]);
+        end
+        
+    end
+    
+    % next four files are farm case
     % 1. full canopy; deep mixed layer
     % 2. full canopy; shallow mixed layer
     % 3. subsurface; deep mixed layer
     % 4. subsurface; shallow mixed layer
     
-    for ff = 1:length(lesfiles)
-        filename = strcat(lesfiles(ff).folder,'/',lesfiles(ff).name);
+    for ff = 1:4
+        
+        filename = strcat(lesfiles(ff+2).folder,'/',lesfiles(ff+2).name);
         les = readtable(filename);
         
     %% Define LES grid
@@ -120,12 +153,12 @@ function envt = envt_les_v9(envt,farm,dir_LES)
         % Save into the structure envt and identify whether run a
         % ("subsurface) or run b ("max canopy")
         
-        % ff=1 full canopy; deep ml
-        % ff=2 full canopy; shallow ml
-        % ff=3 subsurface; deep ml
-        % ff=4 subsurface; shallow ml
+        % ff=1 subsurface; deep ml
+        % ff=2 full canopy; deep ml
+        % ff=3 subsurface; shallow ml
+        % ff=4 full canopy; shallow ml
         
-        if ff == 3 
+        if ff == 1 
             
             % preallocate space; zeros because there is a buffer in the
             % cross-shore where information is unavailable from LES so set
@@ -160,7 +193,7 @@ function envt = envt_les_v9(envt,farm,dir_LES)
             envt.w_def_a = interpn(farm.gridx,farm.gridy,farm.gridz,envt.w_def_a,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
             envt.K_a = interpn(farm.gridx,farm.gridy,farm.gridz,envt.K_a,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
         
-        elseif ff == 4
+        elseif ff == 3
             
             % preallocate space; zeros because there is a buffer in the
             % cross-shore where information is unavailable from LES so set
@@ -195,7 +228,7 @@ function envt = envt_les_v9(envt,farm,dir_LES)
             envt.w_def_b = interpn(farm.gridx,farm.gridy,farm.gridz,envt.w_def_b,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
             envt.K_b = interpn(farm.gridx,farm.gridy,farm.gridz,envt.K_b,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
         
-        elseif ff == 1
+        elseif ff == 2
             
             % preallocate space; zeros because there is a buffer in the
             % cross-shore where information is unavailable from LES so set
@@ -230,7 +263,7 @@ function envt = envt_les_v9(envt,farm,dir_LES)
             envt.w_def_c = interpn(farm.gridx,farm.gridy,farm.gridz,envt.w_def_c,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
             envt.K_c = interpn(farm.gridx,farm.gridy,farm.gridz,envt.K_c,farm.gridx_tr,farm.gridy_tr,farm.gridz_tr,'spline');
         
-        elseif ff == 2
+        elseif ff == 4
             
             % preallocate space; zeros because there is a buffer in the
             % cross-shore where information is unavailable from LES so set
